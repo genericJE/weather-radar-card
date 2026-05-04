@@ -303,13 +303,15 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
               @value-changed=${this._handleSelectorChanged}
             ></ha-selector>
             ${(config.dwd_wind ?? 'off') !== 'off' ? html`
-              <ha-textfield
-                label="Wind Density"
-                .value=${config.dwd_wind_density ?? ''}
+              <ha-selector
+                .hass=${this.hass}
+                .selector=${{ number: { min: 0.25, max: 4, step: 0.25, mode: 'slider' } }}
+                .value=${config.dwd_wind_density ?? 1}
+                .label=${'Wind Density'}
                 .configValue=${'dwd_wind_density'}
-                @input=${this._valueChangedNumber}
-                helper="Default 1. Range 0.25–4. Higher = denser + smaller."
-              ></ha-textfield>
+                .helper=${'Higher = denser grid + smaller indicators'}
+                @value-changed=${this._handleSelectorChanged}
+              ></ha-selector>
             ` : ''}
           </div>
           <label>Animated Wind Streamlines (flow)
