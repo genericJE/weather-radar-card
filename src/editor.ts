@@ -312,13 +312,6 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
               ></ha-textfield>
             ` : ''}
           </div>
-          <ha-textfield
-            label="Forecast Hours (DWD)"
-            .value=${config.dwd_forecast_hours ?? ''}
-            .configValue=${'dwd_forecast_hours'}
-            @input=${this._valueChangedNumber}
-            helper="Include this many hours of nowcast as 'current'. 0 = past only. Auto-uses Radar_wn-product_1x1km_ger when > 0."
-          ></ha-textfield>
           <label>Animated Wind Streamlines (flow)
             <ha-switch
               .checked=${config.dwd_wind_flow === true}
