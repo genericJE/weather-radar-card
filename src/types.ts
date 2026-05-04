@@ -65,6 +65,12 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
   dwd_forecast_hours?: number;
   /** DWD-only: how far into the past to include, in hours (negative). Default -2. Editor caps at -24; YAML accepts down to -84 (DWD WMS API limit, ~3.5 days). Frame count auto-derives from (forecast - past) * 12 + 1 at 5-min intervals. */
   dwd_past_hours?: number;
+  /** DWD-only: 10m wind overlay from ICON. Both styles are client-rendered from the same U/V grid. */
+  dwd_wind?: 'off' | 'barbs' | 'arrows';
+  /** DWD-only: density multiplier for the wind overlay (0.25–4). 1 = default. Higher = denser + smaller. */
+  dwd_wind_density?: number;
+  /** DWD-only: animated wind streamline overlay (à la DWD WarnWetter app). Stacks with dwd_wind. */
+  dwd_wind_flow?: boolean;
   show_snow?: boolean;
   show_progress_bar?: boolean;
   show_color_bar?: boolean;

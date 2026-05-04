@@ -284,6 +284,49 @@ export class WeatherRadarCardEditor extends LitElement implements LovelaceCardEd
             <ha-switch .checked=${config.show_loading_spinner !== false} .configValue=${'show_loading_spinner'} @change=${this._valueChangedSwitch}></ha-switch>
           </label>
         </div>
+        ${config.data_source === 'DWD' ? html`
+          <div class="side-by-side">
+            <ha-selector
+              .hass=${this.hass}
+              .selector=${{
+                select: {
+                  options: [
+                    { value: 'off', label: 'Off' },
+                    { value: 'barbs', label: 'Wind Barbs (meteorological)' },
+                    { value: 'arrows', label: 'Wind Arrows (downwind direction)' },
+                  ],
+                },
+              }}
+              .value=${config.dwd_wind ?? 'off'}
+              .label=${'Wind Overlay (DWD ICON 10m)'}
+              .configValue=${'dwd_wind'}
+              @value-changed=${this._handleSelectorChanged}
+            ></ha-selector>
+            ${(config.dwd_wind ?? 'off') !== 'off' ? html`
+              <ha-textfield
+                label="Wind Density"
+                .value=${config.dwd_wind_density ?? ''}
+                .configValue=${'dwd_wind_density'}
+                @input=${this._valueChangedNumber}
+                helper="Default 1. Range 0.25–4. Higher = denser + smaller."
+              ></ha-textfield>
+            ` : ''}
+          </div>
+          <ha-textfield
+            label="Forecast Hours (DWD)"
+            .value=${config.dwd_forecast_hours ?? ''}
+            .configValue=${'dwd_forecast_hours'}
+            @input=${this._valueChangedNumber}
+            helper="Include this many hours of nowcast as 'current'. 0 = past only. Auto-uses Radar_wn-product_1x1km_ger when > 0."
+          ></ha-textfield>
+          <label>Animated Wind Streamlines (flow)
+            <ha-switch
+              .checked=${config.dwd_wind_flow === true}
+              .configValue=${'dwd_wind_flow'}
+              @change=${this._valueChangedSwitch}
+            ></ha-switch>
+          </label>
+        ` : ''}
 
         <!-- INTERACTION -->
         <h3 class="section-header">${localize('editor.section.interaction')}</h3>

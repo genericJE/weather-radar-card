@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as L from 'leaflet';
 import { WeatherRadarCardConfig } from './types';
+import { Z_RADAR_BASE } from './const';
 import { RateLimiter } from './rate-limiter';
 import { FetchTileLayer, FetchWmsTileLayer, layerSettled } from './fetch-tile-layer';
 import { RadarToolbar } from './radar-toolbar';
@@ -279,7 +280,7 @@ export class RadarPlayer {
     // For snap mode we skip the chain logic and just hard-set every
     // layer's opacity — the old chain becomes meaningless after a jump.
     this._zCounter++;
-    const newZ = 100 + this._zCounter;
+    const newZ = Z_RADAR_BASE + this._zCounter;
     const prev1 = this._prev1Slot;   // currently-fully-visible
     const prev2 = this._prev2Slot;   // currently-fading-out (or already 0)
 

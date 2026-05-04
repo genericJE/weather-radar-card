@@ -11,10 +11,12 @@ import markerClusterCss from 'leaflet.markercluster/dist/MarkerCluster.css';
 
 import './editor';
 import { WeatherRadarCardConfig, Marker } from './types';
-import { CARD_VERSION } from './const';
+import { CARD_VERSION, Z_BASEMAP, Z_LABELS } from './const';
 import { localize } from './localize/localize';
 import { RateLimiter } from './rate-limiter';
 import { FetchTileLayer } from './fetch-tile-layer';
+import { WindOverlay } from './wind-overlay';
+import { WindFlowOverlay } from './wind-flow-overlay';
 import { RadarToolbar } from './radar-toolbar';
 import { RadarPlayer } from './radar-player';
 import {
@@ -59,6 +61,8 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
   private _map: L.Map | null = null;
   private _currentMapStyle: string | null = null;
   private _townLayer: FetchTileLayer | null = null;
+  private _windOverlay: WindOverlay | null = null;
+  private _windFlow: WindFlowOverlay | null = null;
   private _toolbar: RadarToolbar | null = null;
   private _markers: Map<number, L.Marker> = new Map();
   private _clusterGroup: L.MarkerClusterGroup | null = null;
@@ -274,6 +278,7 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
       L.control.scale({ imperial: !metric, metric }).addTo(this._map);
     }
     this._setupBasemap(mapStyle);
+    this._setupWindOverlay();
     this._setupAttribution(mapStyle);
     this._setupMarkers(mapStyle);
     this._setupToolbar();
@@ -343,6 +348,10 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     if (this._map) { this._map.remove(); this._map = null; }
     this._currentMapStyle = null;
     this._townLayer = null;
+    this._windOverlay?.destroy();
+    this._windOverlay = null;
+    this._windFlow?.destroy();
+    this._windFlow = null;
     this._toolbar = null;
     this._markers.clear();
     this._trackedMarkerIdx = -1;
@@ -382,13 +391,43 @@ export class WeatherRadarCard extends LitElement implements LovelaceCard {
     }
 
     new FetchTileLayer(url, { style, subdomains, detectRetina: false, tileSize, zoomOffset } as any)
-      .addTo(this._map).setZIndex(0);
+      .addTo(this._map).setZIndex(Z_BASEMAP);
 
     if (!osmLabels && labelUrl) {
       this._townLayer = new FetchTileLayer(labelUrl, {
         subdomains: 'abcd', detectRetina: false, tileSize, zoomOffset,
       } as any).addTo(this._map);
-      this._townLayer.setZIndex(2);
+      this._townLayer.setZIndex(Z_LABELS);
+    }
+  }
+
+  private _setupWindOverlay(): void {
+    if (!this._map) return;
+    const cfg = this._config;
+    if (cfg.data_source !== 'DWD') return;
+
+    // Anchor matches the radar's latest playback frame: override (or now) plus forecast.
+    const forecastMs = (cfg.dwd_forecast_hours ?? 0) * 3_600_000;
+    const baseMs = cfg.dwd_time_override ? new Date(cfg.dwd_time_override).getTime() : Date.now();
+    const anchorMs = baseMs + forecastMs;
+    const useAnchor = cfg.dwd_time_override != null || forecastMs > 0;
+    const timeMs = useAnchor ? anchorMs : undefined;
+
+    const mode = cfg.dwd_wind ?? 'off';
+    if (mode === 'barbs' || mode === 'arrows') {
+      this._windOverlay = new WindOverlay(this._map, {
+        style: mode,
+        density: cfg.dwd_wind_density,
+        timeMs,
+      });
+    }
+    if (cfg.dwd_wind_flow === true) {
+      // Use a darker stroke on light basemaps and a lighter one on dark.
+      const dark = this._currentMapStyle === 'dark' || this._currentMapStyle === 'satellite';
+      this._windFlow = new WindFlowOverlay(this._map, {
+        timeMs,
+        particleColor: dark ? 'rgba(220,225,235,0.55)' : 'rgba(50,55,75,0.5)',
+      });
     }
   }
 
