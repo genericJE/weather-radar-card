@@ -26,6 +26,30 @@ export function nearestFrameIndex(frames: { time: number }[], nowSec: number): n
   return best;
 }
 
+/**
+ * Default `smooth_overlap` for a data source, chosen by how the source
+ * encodes precipitation alpha. Measured tile alpha:
+ *
+ *   - DWD: rain pixels are ~99.6% fully opaque (alpha 255). Two opaque
+ *     layers crossfading simultaneously dip at the midpoint (each at 0.5
+ *     composites to 0.75) — the visible "blink". Sequential (overlap 0)
+ *     keeps one layer fully opaque throughout, so the composite stays
+ *     solid. → 0.
+ *   - RainViewer / NOAA: rain is translucent (~8–12% opacity). Sequential
+ *     stacks the incoming frame's rain on top of the still-visible
+ *     outgoing frame's rain, so overlapping density nearly doubles then
+ *     falls back each frame — the visible "pulse". Simultaneous
+ *     (overlap 1) fades the two by equal amounts so density stays
+ *     constant. → 1.
+ *
+ * The explicit `smooth_overlap` config still overrides this when set;
+ * this only supplies the default when the user hasn't chosen one.
+ * Pure: source string in → overlap fraction out.
+ */
+export function defaultSmoothOverlap(dataSource: string | undefined): number {
+  return (dataSource ?? 'RainViewer') === 'DWD' ? 0 : 1;
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export type FrameStatus = 'empty' | 'loading' | 'loaded' | 'failed';
@@ -331,7 +355,8 @@ export class RadarPlayer {
   private _crossfadeTiming(): { fadeMs: number; delayMs: number } {
     if (this._cfg.animated_transitions === false) return { fadeMs: 0, delayMs: 0 };
     if (this._cfg.smooth_animation) {
-      const overlap = Math.max(0, Math.min(1, this._cfg.smooth_overlap ?? 1));
+      const overlap = Math.max(0, Math.min(1,
+        this._cfg.smooth_overlap ?? defaultSmoothOverlap(this._cfg.data_source)));
       const fade = Math.floor(this._timeout / (2 - overlap));
       const delay = Math.floor(fade * (1 - overlap));
       return { fadeMs: fade, delayMs: delay };

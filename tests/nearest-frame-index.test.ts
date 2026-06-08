@@ -10,7 +10,38 @@ vi.mock('leaflet', () => {
   return { TileLayer, default: { TileLayer } };
 });
 
-import { nearestFrameIndex } from '../src/radar-player';
+import { nearestFrameIndex, defaultSmoothOverlap } from '../src/radar-player';
+
+// ── defaultSmoothOverlap ─────────────────────────────────────────────────────
+//
+// Per-source crossfade default, chosen by measured precipitation alpha:
+// DWD rain is ~99.6% opaque (wants sequential, 0, to avoid the midpoint
+// dip); RainViewer / NOAA rain is translucent (wants simultaneous, 1, to
+// avoid the additive density pulse). Locking the mapping here so a future
+// edit can't silently flip a source onto the wrong crossfade mode.
+
+describe('defaultSmoothOverlap', () => {
+  it('returns 0 (sequential) for DWD opaque rain', () => {
+    expect(defaultSmoothOverlap('DWD')).toBe(0);
+  });
+
+  it('returns 1 (simultaneous) for RainViewer translucent rain', () => {
+    expect(defaultSmoothOverlap('RainViewer')).toBe(1);
+  });
+
+  it('returns 1 (simultaneous) for NOAA translucent rain', () => {
+    expect(defaultSmoothOverlap('NOAA')).toBe(1);
+  });
+
+  it('defaults to the RainViewer behaviour (1) when the source is unset', () => {
+    // Mirrors the card's own `data_source ?? 'RainViewer'` fallback.
+    expect(defaultSmoothOverlap(undefined)).toBe(1);
+  });
+
+  it('treats any unknown source as translucent (1)', () => {
+    expect(defaultSmoothOverlap('SomeFutureSource')).toBe(1);
+  });
+});
 
 describe('nearestFrameIndex', () => {
   it('returns -1 for an empty frame list', () => {

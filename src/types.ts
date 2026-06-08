@@ -62,9 +62,15 @@ export interface WeatherRadarCardConfig extends LovelaceCardConfig {
    * Smooth-mode crossfade overlap fraction. 0 = sequential (cushion
    * fade-out starts when fade-in ends, no dip but cushion is held).
    * 1 = simultaneous (both fade through the entire frame_delay window
-   * at the same time, brief alpha dip mid-transition). Default 1.
-   * Only takes effect when `smooth_animation: true`. YAML-only; for
-   * tuning the look of the crossfade.
+   * at the same time). Only takes effect when `smooth_animation: true`.
+   * YAML-only; for tuning the look of the crossfade.
+   *
+   * When unset, the default depends on the data source's precipitation
+   * alpha: DWD (opaque rain) defaults to 0 (sequential) to avoid the
+   * midpoint dip opaque layers get when crossfading simultaneously;
+   * RainViewer / NOAA (translucent rain) default to 1 (simultaneous)
+   * to avoid the density pulse translucent layers get when crossfading
+   * sequentially. See defaultSmoothOverlap in radar-player.ts.
    */
   smooth_overlap?: number;
   center_longitude?: CoordinateConfig;
